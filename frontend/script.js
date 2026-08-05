@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Update this URL to match your remote backend server
-            const response = await fetch('http://187.127.143.107:5000/generate', {
+            const response = await fetch('http://187.127.143.107:8372/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

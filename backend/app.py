@@ -35,4 +35,4 @@ def generate_qr():
 
 if __name__ == '__main__':
     # Run on all interfaces so it can be accessed externally on the remote server
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8372)
