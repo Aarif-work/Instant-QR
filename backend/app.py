@@ -1,21 +1,28 @@
+import os
 import io
+import uuid
+import base64
 import qrcode
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, jsonify, url_for
 from flask_cors import CORS
 from flasgger import Swagger
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-# Enable CORS for all routes so the frontend can communicate with it
 CORS(app)
 
+# Configure upload folder
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Swagger config to keep the clean look
 swagger_config = Swagger.DEFAULT_CONFIG.copy()
-swagger_config['title'] = 'Swagger' # Changes the browser tab title
+swagger_config['title'] = 'Swagger'
+swagger_config['favicon'] = 'https://petstore.swagger.io/favicon-32x32.png' # Uses official Swagger icon
 swagger_config['head_text'] = '''
 <style>
-    /* Hide the top bar entirely */
     .swagger-ui .topbar { display: none !important; }
-    
-    /* Clean custom color theme */
     body { background-color: #f8fafc; }
     .swagger-ui .info .title { color: #3b82f6 !important; font-weight: 800; }
     .swagger-ui .btn.execute { background-color: #8b5cf6 !important; border-color: #8b5cf6 !important; color: white !important; font-weight: bold; }
@@ -25,11 +32,10 @@ swagger_config['head_text'] = '''
     .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #3b82f6 !important; border-radius: 4px; }
 </style>
 '''
-
 swagger = Swagger(app, config=swagger_config, template={
     "info": {
         "title": "Instant QR Code API",
-        "description": "API for generating QR codes instantly.",
+        "description": "API for uploading an image and generating a QR code that links to it.",
         "version": "1.0.0"
     }
 })
@@ -37,56 +43,65 @@ swagger = Swagger(app, config=swagger_config, template={
 @app.route('/generate', methods=['POST'])
 def generate_qr():
     """
-    Generate a QR Code from text or URL.
+    Upload an image to generate a QR Code linking to it.
     ---
     tags:
       - QR Code Generation
+    consumes:
+      - multipart/form-data
     parameters:
-      - in: body
-        name: body
+      - in: formData
+        name: image
+        type: file
         required: true
-        description: The data to be encoded in the QR code.
-        schema:
-          type: object
-          properties:
-            data:
-              type: string
-              example: "https://example.com"
+        description: The image file to upload.
     responses:
       200:
-        description: A PNG image of the generated QR code.
-        content:
-          image/png:
-            schema:
-              type: string
-              format: binary
+        description: JSON containing the base64 QR code and the URL to the uploaded image.
       400:
-        description: Bad request, missing data.
+        description: Bad request, missing file.
     """
-    data = request.json.get('data')
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+        
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+        
+    if file:
+        # Save the uploaded file safely with a unique name
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'png'
+        filename = secure_filename(f"{uuid.uuid4().hex}.{ext}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        # Generate the public URL for the uploaded image
+        # Using the hardcoded IP for the remote server as requested
+        file_url = f"http://187.127.143.107:8372/static/uploads/{filename}"
+        
+        # Create QR code for the file URL
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(file_url)
+        qr.make(fit=True)
 
-    # Create QR code
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(data)
-    qr.make(fit=True)
-
-    # Create an image from the QR Code instance
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Save image to a bytes buffer
-    img_io = io.BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    
-    return send_file(img_io, mimetype='image/png')
+        # Create an image from the QR Code instance
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Save image to a bytes buffer and encode to base64
+        img_io = io.BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+        qr_base64 = base64.b64encode(img_io.getvalue()).decode('utf-8')
+        
+        return jsonify({
+            'image_url': file_url,
+            'qr_code_base64': qr_base64
+        })
 
 if __name__ == '__main__':
-    # Run on all interfaces so it can be accessed externally on the remote server
     app.run(host='0.0.0.0', port=8372)

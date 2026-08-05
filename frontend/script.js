@@ -1,41 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Tabs Logic ---
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.add('hidden'));
-
-            btn.classList.add('active');
-            const targetId = btn.getAttribute('data-target');
-            document.getElementById(targetId).classList.remove('hidden');
-
-            // If navigating away from scan, stop camera
-            if (targetId !== 'scan-section' && html5QrCode) {
-                stopScanner();
-            }
-        });
-    });
-
-    // --- Generate QR Logic ---
-    const input = document.getElementById('qr-input');
+    const fileInput = document.getElementById('image-upload');
+    const fileNameDisplay = document.getElementById('file-name-display');
     const generateBtn = document.getElementById('generate-btn');
     const resultContainer = document.getElementById('result-container');
     const qrImage = document.getElementById('qr-image');
     const downloadBtn = document.getElementById('download-btn');
+    const whatsappBtn = document.getElementById('whatsapp-btn');
     const loading = document.getElementById('loading');
     const errorMsg = document.getElementById('generate-error-message');
 
     // Make sure to put your actual remote server IP here!
     const API_URL = 'http://187.127.143.107:8372/generate';
 
+    let currentImageUrl = ''; // To store the uploaded image URL for WhatsApp
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            fileNameDisplay.textContent = `Selected: ${e.target.files[0].name}`;
+            fileNameDisplay.classList.remove('hidden');
+            generateBtn.disabled = false;
+        } else {
+            fileNameDisplay.textContent = 'No file selected';
+            generateBtn.disabled = true;
+        }
+    });
+
     generateBtn.addEventListener('click', async () => {
-        const text = input.value.trim();
+        const file = fileInput.files[0];
         
-        if (!text) {
-            showError(errorMsg, 'Please enter some text or a URL');
+        if (!file) {
+            showError(errorMsg, 'Please select an image file first.');
             return;
         }
 
@@ -45,127 +39,46 @@ document.addEventListener('DOMContentLoaded', () => {
         loading.classList.remove('hidden');
         generateBtn.disabled = true;
 
+        const formData = new FormData();
+        formData.append('image', file);
+
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ data: text })
+                body: formData // Fetch automatically sets correct Content-Type for FormData
             });
 
             if (!response.ok) {
-                throw new Error('Failed to generate QR code');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate QR code');
             }
 
-            const blob = await response.blob();
-            const imageUrl = URL.createObjectURL(blob);
+            const data = await response.json();
             
-            qrImage.src = imageUrl;
-            downloadBtn.href = imageUrl;
+            // Set the QR image source using base64
+            qrImage.src = `data:image/png;base64,${data.qr_code_base64}`;
+            downloadBtn.href = qrImage.src;
+            
+            // Save the URL for WhatsApp sharing
+            currentImageUrl = data.image_url;
             
             loading.classList.add('hidden');
             resultContainer.classList.remove('hidden');
             
         } catch (error) {
             loading.classList.add('hidden');
-            showError(errorMsg, 'Error connecting to the server. Make sure it is running!');
+            showError(errorMsg, error.message || 'Error connecting to the server. Make sure it is running!');
         } finally {
             generateBtn.disabled = false;
         }
     });
 
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            generateBtn.click();
+    whatsappBtn.addEventListener('click', () => {
+        if (currentImageUrl) {
+            const text = encodeURIComponent(`Check out my image: ${currentImageUrl}`);
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${text}`;
+            window.open(whatsappUrl, '_blank');
         }
-    });
-
-    // --- Scan QR Logic ---
-    let html5QrCode;
-    const startCamBtn = document.getElementById('start-camera-btn');
-    const stopCamBtn = document.getElementById('stop-camera-btn');
-    const fileUpload = document.getElementById('qr-upload');
-    const readerContainer = document.getElementById('reader-container');
-    const scanControls = document.querySelector('.scan-controls');
-    
-    const scanResultContainer = document.getElementById('scan-result-container');
-    const scanResultText = document.getElementById('scan-result-text');
-    const scanErrorMsg = document.getElementById('scan-error-message');
-    const copyBtn = document.getElementById('copy-btn');
-
-    startCamBtn.addEventListener('click', startScanner);
-    stopCamBtn.addEventListener('click', stopScanner);
-
-    fileUpload.addEventListener('change', (e) => {
-        if (e.target.files.length == 0) return;
-        const file = e.target.files[0];
-        
-        scanErrorMsg.classList.add('hidden');
-        scanResultContainer.classList.add('hidden');
-
-        const html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.scanFile(file, true)
-            .then(decodedText => {
-                onScanSuccess(decodedText);
-            })
-            .catch(err => {
-                showError(scanErrorMsg, "Could not find a valid QR Code in this image.");
-            });
-    });
-
-    function startScanner() {
-        scanErrorMsg.classList.add('hidden');
-        scanResultContainer.classList.add('hidden');
-        scanControls.classList.add('hidden');
-        readerContainer.classList.remove('hidden');
-
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-            .catch(err => {
-                readerContainer.classList.add('hidden');
-                scanControls.classList.remove('hidden');
-                showError(scanErrorMsg, "Error starting camera. Permissions denied?");
-            });
-    }
-
-    function stopScanner() {
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                readerContainer.classList.add('hidden');
-                scanControls.classList.remove('hidden');
-                html5QrCode.clear();
-                html5QrCode = null;
-            }).catch(err => {
-                console.error("Failed to stop scanner.", err);
-            });
-        }
-    }
-
-    function onScanSuccess(decodedText) {
-        if (html5QrCode && html5QrCode.isScanning) {
-            stopScanner();
-        }
-        scanResultText.textContent = decodedText;
-        scanResultContainer.classList.remove('hidden');
-    }
-
-    function onScanFailure(error) {
-        // Handle scan failure silently to keep scanning
-    }
-
-    copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(scanResultText.textContent)
-            .then(() => {
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copied!';
-                setTimeout(() => copyBtn.textContent = originalText, 2000);
-            })
-            .catch(err => {
-                console.error('Failed to copy text', err);
-            });
     });
 
     function showError(element, message) {
