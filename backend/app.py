@@ -2,13 +2,50 @@ import io
 import qrcode
 from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
+from flasgger import Swagger
 
 app = Flask(__name__)
 # Enable CORS for all routes so the frontend can communicate with it
 CORS(app)
 
+# Initialize Swagger
+swagger = Swagger(app, template={
+    "info": {
+        "title": "Instant QR Code API",
+        "description": "API for generating QR codes instantly.",
+        "version": "1.0.0"
+    }
+})
+
 @app.route('/generate', methods=['POST'])
 def generate_qr():
+    """
+    Generate a QR Code from text or URL.
+    ---
+    tags:
+      - QR Code Generation
+    parameters:
+      - in: body
+        name: body
+        required: true
+        description: The data to be encoded in the QR code.
+        schema:
+          type: object
+          properties:
+            data:
+              type: string
+              example: "https://example.com"
+    responses:
+      200:
+        description: A PNG image of the generated QR code.
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+      400:
+        description: Bad request, missing data.
+    """
     data = request.json.get('data')
     if not data:
         return jsonify({'error': 'No data provided'}), 400
