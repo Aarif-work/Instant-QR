@@ -9,6 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 swagger_config = Swagger.DEFAULT_CONFIG.copy()
+swagger_config['title'] = 'Swagger' # Changes the browser tab title
 swagger_config['head_text'] = '''
 <style>
     /* Hide the top bar entirely */
