@@ -3,36 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instant QR Code Generator</title>
+    <title>QR Code Studio</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Include html5-qrcode library for scanning -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>QR Generator ✨</h1>
-            <p>Create elegant QR codes instantly.</p>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>QR Studio</h1>
+            <p>Generate and scan QR codes instantly.</p>
         </header>
-        
-        <main>
-            <div class="input-group">
-                <input type="text" id="qr-input" placeholder="Enter URL or text here..." autocomplete="off">
-                <button id="generate-btn">Generate</button>
-            </div>
-            
-            <div id="result-container" class="hidden">
-                <div class="qr-wrapper">
-                    <img id="qr-image" src="" alt="Generated QR Code">
+
+        <div class="tabs">
+            <button class="tab-btn active" data-target="generate-section">Generate</button>
+            <button class="tab-btn" data-target="scan-section">Scan</button>
+        </div>
+
+        <main class="app-content">
+            <!-- GENERATE SECTION -->
+            <section id="generate-section" class="tab-content active">
+                <div class="input-group">
+                    <label for="qr-input">Content to Encode</label>
+                    <input type="text" id="qr-input" placeholder="Enter URL, text, phone number..." autocomplete="off">
+                    <button id="generate-btn" class="primary-btn">Generate QR Code</button>
                 </div>
-                <a id="download-btn" href="#" download="qrcode.png" class="secondary-btn">Download Image</a>
-            </div>
-            
-            <div id="loading" class="hidden">
-                <div class="spinner"></div>
-            </div>
-            <div id="error-message" class="hidden"></div>
+                
+                <div id="result-container" class="hidden result-box">
+                    <div class="qr-wrapper">
+                        <img id="qr-image" src="" alt="Generated QR Code">
+                    </div>
+                    <a id="download-btn" href="#" download="qrcode.png" class="secondary-btn">Download Image</a>
+                </div>
+                
+                <div id="loading" class="hidden">
+                    <div class="spinner"></div>
+                    <p class="status-text">Generating...</p>
+                </div>
+                <div id="generate-error-message" class="error-message hidden"></div>
+            </section>
+
+            <!-- SCAN SECTION -->
+            <section id="scan-section" class="tab-content hidden">
+                <div class="scan-controls">
+                    <button id="start-camera-btn" class="primary-btn outline">Start Camera</button>
+                    <span class="divider">OR</span>
+                    <label class="file-upload-btn primary-btn outline">
+                        Upload Image
+                        <input type="file" id="qr-upload" accept="image/*" class="hidden-input">
+                    </label>
+                </div>
+
+                <div id="reader-container" class="hidden">
+                    <div id="reader"></div>
+                    <button id="stop-camera-btn" class="secondary-btn danger mt-3">Stop Camera</button>
+                </div>
+
+                <div id="scan-result-container" class="hidden result-box">
+                    <h3>Scanned Result:</h3>
+                    <div class="scan-result-content">
+                        <p id="scan-result-text"></p>
+                        <button id="copy-btn" class="secondary-btn small">Copy</button>
+                    </div>
+                </div>
+                <div id="scan-error-message" class="error-message hidden"></div>
+            </section>
         </main>
     </div>
 
