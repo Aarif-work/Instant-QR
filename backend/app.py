@@ -8,8 +8,24 @@ app = Flask(__name__)
 # Enable CORS for all routes so the frontend can communicate with it
 CORS(app)
 
-# Initialize Swagger
-swagger = Swagger(app, template={
+swagger_config = Swagger.DEFAULT_CONFIG.copy()
+swagger_config['head_text'] = '''
+<style>
+    /* Hide the top bar entirely */
+    .swagger-ui .topbar { display: none !important; }
+    
+    /* Clean custom color theme */
+    body { background-color: #f8fafc; }
+    .swagger-ui .info .title { color: #3b82f6 !important; font-weight: 800; }
+    .swagger-ui .btn.execute { background-color: #8b5cf6 !important; border-color: #8b5cf6 !important; color: white !important; font-weight: bold; }
+    .swagger-ui .btn.execute:hover { background-color: #7c3aed !important; }
+    .swagger-ui .opblock.opblock-post { border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.05) !important; border-radius: 8px; }
+    .swagger-ui .opblock.opblock-post .opblock-summary { background-color: rgba(59, 130, 246, 0.1) !important; border-bottom: none; }
+    .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #3b82f6 !important; border-radius: 4px; }
+</style>
+'''
+
+swagger = Swagger(app, config=swagger_config, template={
     "info": {
         "title": "Instant QR Code API",
         "description": "API for generating QR codes instantly.",
