@@ -13,36 +13,68 @@
     <div class="app-container">
         <header class="app-header">
             <h1>QR Studio</h1>
-            <p>Upload an image to generate a QR code linking directly to it.</p>
+            <p>Generate a QR Code from a link, image upload, or live camera.</p>
         </header>
 
+        <div class="tabs">
+            <button class="tab-btn active" data-target="url-section">URL</button>
+            <button class="tab-btn" data-target="upload-section">Upload File</button>
+            <button class="tab-btn" data-target="camera-section">Live Camera</button>
+        </div>
+
         <main class="app-content">
-            <section class="tab-content active">
+            <!-- TAB 1: URL -->
+            <section id="url-section" class="tab-content active">
+                <div class="input-group">
+                    <label for="qr-input">Website URL or Text</label>
+                    <input type="text" id="qr-input" placeholder="https://example.com" autocomplete="off">
+                </div>
+            </section>
+
+            <!-- TAB 2: Upload File -->
+            <section id="upload-section" class="tab-content hidden">
                 <div class="input-group">
                     <label class="file-upload-btn primary-btn outline">
-                        Take Photo / Upload Image
+                        Browse Files
                         <input type="file" id="image-upload" accept="image/*" class="hidden-input">
                     </label>
                     <div id="file-name-display" class="status-text hidden">No file selected</div>
-                    <button id="generate-btn" class="primary-btn mt-3" disabled>Generate QR Code</button>
                 </div>
-                
-                <div id="result-container" class="hidden result-box">
-                    <div class="qr-wrapper">
-                        <img id="qr-image" src="" alt="Generated QR Code">
-                    </div>
-                    <div class="action-buttons">
-                        <a id="download-btn" href="#" download="qrcode.png" class="secondary-btn">Download</a>
-                        <button id="whatsapp-btn" class="secondary-btn" style="color: white; background: #25D366; border-color: #25D366;">Share on WhatsApp</button>
-                    </div>
-                </div>
-                
-                <div id="loading" class="hidden">
-                    <div class="spinner"></div>
-                    <p class="status-text">Uploading and Generating...</p>
-                </div>
-                <div id="generate-error-message" class="error-message hidden"></div>
             </section>
+
+            <!-- TAB 3: Live Camera -->
+            <section id="camera-section" class="tab-content hidden">
+                <div class="camera-container">
+                    <video id="webcam-video" autoplay playsinline></video>
+                    <canvas id="webcam-canvas" class="hidden"></canvas>
+                </div>
+                <div class="camera-controls">
+                    <button id="start-cam-btn" class="secondary-btn small">Turn Camera On</button>
+                    <button id="snap-btn" class="primary-btn outline hidden">Snap Photo</button>
+                </div>
+                <div id="snapshot-status" class="status-text hidden">Photo captured!</div>
+            </section>
+
+            <!-- Generate Button & Results (Shared across all tabs) -->
+            <div class="action-section">
+                <button id="generate-btn" class="primary-btn mt-3">Generate QR Code</button>
+            </div>
+            
+            <div id="result-container" class="hidden result-box">
+                <div class="qr-wrapper">
+                    <img id="qr-image" src="" alt="Generated QR Code">
+                </div>
+                <div class="action-buttons">
+                    <a id="download-btn" href="#" download="qrcode.png" class="secondary-btn">Download</a>
+                    <button id="whatsapp-btn" class="secondary-btn" style="color: white; background: #25D366; border-color: #25D366;">Share on WhatsApp</button>
+                </div>
+            </div>
+            
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <p class="status-text">Processing...</p>
+            </div>
+            <div id="generate-error-message" class="error-message hidden"></div>
         </main>
     </div>
 
