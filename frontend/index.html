@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant QR Code Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QR Generator ✨</h1>
+            <p>Create elegant QR codes instantly.</p>
+        </header>
+        
+        <main>
+            <div class="input-group">
+                <input type="text" id="qr-input" placeholder="Enter URL or text here..." autocomplete="off">
+                <button id="generate-btn">Generate</button>
+            </div>
+            
+            <div id="result-container" class="hidden">
+                <div class="qr-wrapper">
+                    <img id="qr-image" src="" alt="Generated QR Code">
+                </div>
+                <a id="download-btn" href="#" download="qrcode.png" class="secondary-btn">Download Image</a>
+            </div>
+            
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+            </div>
+            <div id="error-message" class="hidden"></div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
